@@ -16,19 +16,18 @@ RUN apt-get update && apt-get install -y \
 # Copy the project files
 COPY . .
 
-# Install dependencies using standard pip (since HF environments are isolated)
+# Install dependencies (standard install, not editable)
 RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir -e .[dev]
+RUN pip install --no-cache-dir .
 
 # Create data directories and set permissions for Hugging Face
-# Hugging Face runs containers as a non-root user (UID 1000)
 RUN mkdir -p data/raw data/processed data/vectorstore/faiss data/vectorstore/chroma data/logs
 RUN useradd -m -u 1000 user && chown -R user:user /app
 USER user
 
-# Hugging Face strictly requires applications to run on port 7860
+ENV PYTHONPATH=/app
 ENV PORT=7860
 EXPOSE 7860
 
 # Start the FastAPI server on port 7860
-CMD uvicorn ragx.api.main:app --host 0.0.0.0 --port 7860
+CMD ["uvicorn", "ragx.api.main:app", "--host", "0.0.0.0", "--port", "7860"]
