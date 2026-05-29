@@ -1,3 +1,12 @@
+---
+title: RAGX Engine
+emoji: 🚀
+colorFrom: blue
+colorTo: white
+sdk: docker
+pinned: false
+---
+
 # RAGX — Advanced Retrieval and Generation Engine
 
 <p align="center">
