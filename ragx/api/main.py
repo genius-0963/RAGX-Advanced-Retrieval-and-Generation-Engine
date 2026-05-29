@@ -12,6 +12,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
+import os
 
 from ragx.api.middleware import RequestLoggingMiddleware, configure_cors
 from ragx.api.routes import admin, feedback, ingest, query
@@ -86,8 +88,13 @@ def create_app() -> FastAPI:
     # Root & health endpoints
     @app.get("/", include_in_schema=False)
     async def root():
-        """Redirect root to API docs."""
-        return RedirectResponse(url="/docs")
+        """Redirect root to UI."""
+        return RedirectResponse(url="/ui/index.html")
+
+    # Mount static files for the frontend
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    os.makedirs(static_dir, exist_ok=True)
+    app.mount("/ui", StaticFiles(directory=static_dir), name="ui")
 
     @app.get("/health", response_model=HealthResponse, tags=["System"])
     async def health_check():

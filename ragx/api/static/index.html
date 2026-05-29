@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAGX | Advanced Retrieval Engine</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    
+    <div class="app-container glass-panel">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>RAGX</h2>
+                <p>Retrieval Augmented Generation</p>
+            </div>
+            
+            <div class="upload-section">
+                <h3>Knowledge Base</h3>
+                <div id="drop-zone" class="drop-zone">
+                    <i data-lucide="upload-cloud"></i>
+                    <p>Drag & Drop or <span class="highlight">Browse</span></p>
+                    <input type="file" id="file-upload" multiple hidden>
+                </div>
+                <div id="upload-status" class="status-msg"></div>
+            </div>
+            
+            <div class="document-list-container">
+                <h3>Ingested Documents</h3>
+                <ul id="document-list" class="document-list">
+                    <!-- Documents injected via JS -->
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <header class="chat-header">
+                <div class="model-info">
+                    <span class="status-indicator active"></span>
+                    <span>Gemini-1.5-Flash</span>
+                </div>
+                <div class="actions">
+                    <button class="icon-btn" id="theme-toggle" title="Toggle Theme"><i data-lucide="moon"></i></button>
+                    <button class="icon-btn" title="Settings"><i data-lucide="settings"></i></button>
+                </div>
+            </header>
+
+            <div id="chat-messages" class="chat-messages">
+                <div class="message system-msg">
+                    <div class="avatar"><i data-lucide="cpu"></i></div>
+                    <div class="message-content">
+                        <p>Welcome to RAGX. I'm connected to your local vector store. Upload some documents on the left, and ask me anything!</p>
+                    </div>
+                </div>
+                <!-- Dynamic messages go here -->
+            </div>
+
+            <div class="chat-input-container">
+                <form id="chat-form" class="chat-form">
+                    <textarea id="chat-input" placeholder="Ask a question about your documents..." rows="1" autofocus></textarea>
+                    <button type="submit" id="send-btn" class="send-btn">
+                        <i data-lucide="send"></i>
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
