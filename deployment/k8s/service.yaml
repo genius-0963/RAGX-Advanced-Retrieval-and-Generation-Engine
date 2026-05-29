@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ragx-api
+  labels:
+    app: ragx
+    component: api
+spec:
+  type: ClusterIP
+  selector:
+    app: ragx
+    component: api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
