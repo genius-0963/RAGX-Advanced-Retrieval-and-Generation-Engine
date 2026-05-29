@@ -1,285 +1,178 @@
 # RAGX — Advanced Retrieval and Generation Engine
 
 <p align="center">
-  <strong>A production-grade RAG platform with multi-format ingestion, hybrid retrieval, multi-LLM generation, evaluation, and monitoring.</strong>
+  <strong>A Production-Grade, Scalable, and Extensible RAG Platform Built for Enterprise AI Applications</strong>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python">
+  <img src="https://img.shields.io/badge/architecture-Microservices-purple.svg" alt="Architecture">
   <img src="https://img.shields.io/badge/langchain-1.3+-green.svg" alt="LangChain">
   <img src="https://img.shields.io/badge/fastapi-latest-teal.svg" alt="FastAPI">
-  <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
+  <img src="https://img.shields.io/badge/Docker-Ready-blue.svg" alt="Docker">
 </p>
 
 ---
 
-## Architecture
+## 📖 Project Overview
 
-```
-                  User Query
-                       │
-                       ▼
-                API Gateway (FastAPI)
-                       │
-                       ▼
-                Query Processor
-                       │
-                       ▼
-                 Retriever
-                       │
-         ┌─────────────┴─────────────┐
-         │                           │
-         ▼                           ▼
-      BM25                    Vector Search
-         │                           │
-         └────── Hybrid Search ──────┘
-                       │
-                       ▼
-                   Re-ranker
-                       │
-                       ▼
-              Context Builder
-                       │
-                       ▼
-                     LLM
-                       │
-                       ▼
-          Answer + Sources + Score
-                       │
-                       ▼
-                 Monitoring
-```
+**RAGX** is an end-to-end Retrieval-Augmented Generation (RAG) engine designed with senior software engineering and ML-Ops best practices. Built to solve the limitations of standard naive RAG pipelines, RAGX introduces **hybrid search**, **contextual compression**, **cross-encoder reranking**, and **multi-agent generation capabilities** into a unified, modular architecture.
 
-## Features
-
-### Phase 1: Document Ingestion
-- **Multi-format loading**: PDF, DOCX, TXT, CSV, Markdown, Web pages
-- **Text cleaning**: Header/footer removal, deduplication, Unicode normalization
-- **Metadata generation**: document_id, source, upload_time, page_number, section
-- **Batch processing**: Concurrent ingestion with progress tracking
-
-### Phase 2: Embedding Generation
-- **Intelligent chunking**: Recursive text splitting (500 tokens, 100 overlap) + semantic chunking
-- **Multiple embedding models**: Sentence Transformers (Local Default), OpenAI, BGE
-- **Vector stores**: ChromaDB (default) and FAISS
-- **Incremental updates**: Only process new/modified documents
-
-### Phase 3: Retrieval Engine
-- **Search strategies**: Similarity, BM25, Hybrid (Reciprocal Rank Fusion)
-- **Advanced retrieval**: Multi-query, parent-child, context compression
-- **Re-ranking**: Cross-encoder (ms-marco-MiniLM) + Cohere Rerank API
-- **Evaluation metrics**: Precision@K, Recall@K, MRR, NDCG@K
-
-### Phase 4: LLM Integration
-- **Multi-provider**: Gemini (Default), GPT-4o, Claude, Llama (Ollama)
-- **Anti-hallucination**: Grounded prompts with citation enforcement
-- **Conversation memory**: Session-based sliding window
-- **Source attribution**: Automatic citation extraction and formatting
-
-### Phase 5: Production Deployment
-- **FastAPI backend**: RESTful API with Swagger docs
-- **Evaluation**: RAGAS + DeepEval metrics
-- **Monitoring**: Prometheus metrics + Grafana dashboards
-- **Deployment**: Docker, Docker Compose, Kubernetes
+Whether deploying a semantic search engine over million-document corporate wikis, or building highly contextual conversational AI, RAGX provides the necessary data-ingestion scalability, retrieval precision, and generation safeguards to confidently push AI to production.
 
 ---
 
-## Quick Start (Recommended Installation via `uv`)
+## 🏛️ System Architecture
 
-Because RAGX relies on heavy ML dependencies (like PyTorch and LangChain), we strongly recommend using [uv](https://github.com/astral-sh/uv) to manage your Python environment. This completely avoids common C-library linking errors (like `expat` or `sqlite`) natively found on macOS.
+RAGX is strictly decoupled into 5 operational phases using the **Factory** and **Strategy** design patterns, allowing developers to seamlessly swap out underlying ML models, vector databases, and retrieval logic without touching core application code.
 
-### 1. Install `uv`
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+```mermaid
+graph TD
+    %% Define Styles
+    classDef user fill:#2d3436,stroke:#dfe6e9,stroke-width:2px,color:#fff
+    classDef api fill:#0984e3,stroke:#74b9ff,stroke-width:2px,color:#fff
+    classDef pipeline fill:#6c5ce7,stroke:#a29bfe,stroke-width:2px,color:#fff
+    classDef ml fill:#00b894,stroke:#55efc4,stroke-width:2px,color:#fff
+    classDef db fill:#e17055,stroke:#fab1a0,stroke-width:2px,color:#fff
+    classDef metrics fill:#fdcb6e,stroke:#ffeaa7,stroke-width:2px,color:#fff
+
+    User((User Request)):::user --> API[FastAPI Gateway]:::api
+
+    subgraph Phase 1: Ingestion Pipeline
+        API --> Ingest[Document Ingestion]:::pipeline
+        Ingest --> Clean[Pre-processor & Metadata Extractor]:::pipeline
+    end
+
+    subgraph Phase 2: Embedding & Storage
+        Clean --> Chunk[Semantic & Recursive Chunking]:::ml
+        Chunk --> Embed[Embedding Models]:::ml
+        Embed --> VDB[(ChromaDB / FAISS)]:::db
+    end
+
+    subgraph Phase 3: Advanced Retrieval
+        API --> Query[Query Processor]:::pipeline
+        Query --> Sparse[BM25 Lexical Search]:::ml
+        Query --> Dense[Dense Vector Search]:::ml
+        Sparse --> RRF{Reciprocal Rank Fusion}:::pipeline
+        Dense --> RRF
+        RRF --> Rerank[Cross-Encoder Reranker]:::ml
+    end
+
+    subgraph Phase 4: Generation
+        Rerank --> Context[Context Builder & Memory]:::pipeline
+        Context --> LLM[LLM Engine]:::ml
+    end
+
+    LLM --> Response[Answer + Citations]:::api
+    Response --> User
+
+    %% Monitoring
+    API -.-> Prom[Prometheus Metrics]:::metrics
+    LLM -.-> Eval[RAGAS & DeepEval]:::metrics
+    Prom -.-> Grafana[Grafana Dashboards]:::metrics
 ```
 
-### 2. Clone and Setup Environment
-```bash
-# Clone the repository
-cd "RAGX – Advanced Retrieval and Generation Engine"
+---
 
-# Create a clean Python 3.12 environment and activate it
+## 🧠 Core Engineering & AI Capabilities
+
+### 1. Robust Data Ingestion & Preprocessing
+* **Multi-Format Extractor:** Asynchronous parsers for PDF, DOCX, TXT, CSV, Markdown, and Web Scrapes.
+* **Intelligent Cleaning:** Automated header/footer stripping, Unicode normalization, and structural preservation.
+* **Deterministic Tracking:** SHA-256 content hashing to prevent duplicate vector ingestion.
+
+### 2. High-Dimensional Embeddings
+* **Adaptive Chunking:** Utilizes both statistical (Recursive Character Splitter) and NLP-driven (Semantic Chunker) algorithms to maintain context boundaries.
+* **Provider Agnosticism:** Factory patterns allow hot-swapping between `OpenAI`, `BGE`, and local `SentenceTransformers` via environment variables.
+
+### 3. Precision Retrieval Engine (The RAGX Differentiator)
+* **Hybrid Search Implementation:** Merges Sparse (BM25) and Dense (Similarity) retrieval using Reciprocal Rank Fusion (RRF), ensuring exact-keyword matching doesn't get lost in semantic space.
+* **Cross-Encoder Reranking:** Re-evaluates the top-K retrieved chunks against the original query using `ms-marco-MiniLM` or `Cohere`, pushing the most highly correlated context to the top.
+* **Advanced Query Strategies:** Implements Parent-Child chunk retrieval and Query Expansion (Multi-Query).
+
+### 4. Anti-Hallucination Generation
+* **Grounded Prompts:** Strict system prompts forcing the LLM to only utilize provided context.
+* **Citation Traceability:** Automatically extracts source documents, page numbers, and UUIDs to provide transparent, auditable answers.
+* **Multi-LLM Support:** Seamlessly integrated with Google Gemini, OpenAI GPT-4o, Anthropic Claude, and Local Ollama models.
+
+### 5. Production-Ready MLOps
+* **Type Safety:** 100% strictly typed Python (mypy) with Pydantic-enforced configuration models.
+* **Monitoring:** Pre-instrumented with Prometheus and visualized via Dockerized Grafana dashboards.
+* **Continuous Evaluation:** Integrated `RAGAS` and `DeepEval` frameworks to continuously benchmark Faithfulness, Answer Relevance, and Context Precision.
+
+---
+
+## 🚀 Future Scope & Business Applications
+
+RAGX is not just a coding experiment—it is a foundational blueprint that can be rapidly extended to solve high-value enterprise problems:
+
+1. **Automated Legal & Compliance Analysis**
+   * *Use Case:* Ingesting thousands of regulatory PDFs to allow legal teams to instantly query compliance constraints.
+   * *Future Feature:* Add GraphRAG (Knowledge Graphs) to RAGX to map relationships between distinct corporate entities and legal clauses.
+
+2. **Enterprise Technical Support (DevOps Agent)**
+   * *Use Case:* Indexing massive internal documentation hubs (Confluence, Jira, GitHub) to instantly solve developer blockers.
+   * *Future Feature:* Agentic Tool Calling—allowing the RAGX LLM to not only answer questions but also execute bash scripts or query databases on behalf of the user.
+
+3. **Hyper-Personalized Healthcare Triage**
+   * *Use Case:* Searching through anonymized clinical trials and medical journals to assist practitioners in diagnosis.
+   * *Future Feature:* HIPAA-compliant on-premise deployment via Kubernetes, utilizing completely localized LLMs (like LLaMA 3 via Ollama) and vector databases.
+
+---
+
+## 🛠️ Quick Start Guide
+
+We recommend using **`uv`** (an ultra-fast Python manager written in Rust) to bypass common C-library compilation issues on host machines.
+
+### 1. System Setup
+```bash
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone RAGX
+git clone https://github.com/genius-0963/RAGX-Advanced-Retrieval-and-Generation-Engine.git
+cd RAGX-Advanced-Retrieval-and-Generation-Engine
+
+# Create a clean environment and install dependencies in seconds
 uv venv --python 3.12 .venv
 source .venv/bin/activate
-
-# Install all dependencies (in seconds!)
 uv pip install -e ".[dev]"
 ```
 
-### 3. Configure API Keys
+### 2. Configuration
+Create a `.env` file from the example template. By default, RAGX is configured for **Google Gemini** (Generation) and **Sentence Transformers** (Local Embeddings).
 ```bash
-# Copy the environment template
 cp .env.example .env
-
-# Edit .env and insert your API keys
-# Out of the box, RAGX is configured to use Google Gemini and local SentenceTransformers.
-# Make sure to set: GOOGLE_API_KEY=your_key_here
+# Edit .env and insert your API Key:
+# GOOGLE_API_KEY=your_key_here
 ```
 
-### 4. Run the End-to-End Test!
-We've included a script to quickly test all 4 phases (Ingestion -> Embedding -> Retrieval -> Generation) without starting a server:
+### 3. Verify Integration (End-to-End Test)
+Run the built-in testing suite to verify all ML components (Ingestion → VectorDB → Retrieval → Generation) are communicating correctly:
 ```bash
 python test_run.py
 ```
 
-### 5. Run the API Server
+### 4. Deploy the FastAPI Gateway
+Launch the asynchronous REST API server:
 ```bash
-# Development mode (with auto-reload)
-make run
-
-# Or directly:
 uvicorn ragx.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
-Navigate to **http://localhost:8000/docs** for the interactive Swagger UI.
+*Visit `http://localhost:8000/docs` to view the interactive OpenAPI specification.*
 
 ---
 
-## API Endpoints
+## 🐳 Dockerized Infrastructure
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/v1/ingest/file` | Upload and process a document |
-| `POST` | `/api/v1/ingest/url` | Ingest from a web URL |
-| `POST` | `/api/v1/ingest/batch` | Batch upload multiple documents |
-| `GET` | `/api/v1/documents` | List ingested documents |
-| `DELETE` | `/api/v1/documents/{id}` | Delete a document |
-| `POST` | `/api/v1/query` | Query with retrieval + generation |
-| `POST` | `/api/v1/chat` | Conversational chat with memory |
-| `GET` | `/api/v1/query/history` | Query history |
-| `GET` | `/api/v1/admin/stats` | System statistics |
-| `POST` | `/api/v1/admin/reindex` | Trigger re-indexing |
-| `GET` | `/api/v1/admin/config` | Current configuration |
-| `POST` | `/api/v1/feedback` | Submit feedback |
-| `GET` | `/api/v1/feedback/report` | Feedback metrics |
-| `GET` | `/health` | Health check |
-| `GET` | `/metrics` | Prometheus metrics |
-
----
-
-## Usage Examples
-
-### Python SDK
-
-```python
-from ragx.config.settings import get_settings
-from ragx.ingestion.pipeline import IngestionPipeline
-from ragx.embeddings.pipeline import EmbeddingPipeline
-from ragx.retrieval.engine import RetrievalEngine
-from ragx.generation.pipeline import GenerationPipeline
-
-settings = get_settings()
-
-# 1. Ingest documents
-ingestion = IngestionPipeline(settings=settings)
-docs = ingestion.ingest_file("data/raw/document.pdf")
-
-# 2. Embed and store
-embeddings = EmbeddingPipeline(settings=settings)
-embeddings.process(docs)
-
-# 3. Retrieve
-retrieval = RetrievalEngine(settings=settings, vectorstore=embeddings.get_vectorstore())
-
-# 4. Generate answers
-generation = GenerationPipeline(settings=settings, retrieval_engine=retrieval)
-result = generation.query("What are the key findings?")
-
-print(result["answer"])
-print(result["sources"])
-```
-
-### cURL
+Deploy the entire microservice stack (API Gateway, Prometheus, Grafana, and Vector Database) in a single command:
 
 ```bash
-# Ingest a file
-curl -X POST http://localhost:8000/api/v1/ingest/file \
-  -F "file=@document.pdf"
-
-# Query
-curl -X POST http://localhost:8000/api/v1/query \
-  -H "Content-Type: application/json" \
-  -d '{"query": "What are the key findings?", "top_k": 5}'
-```
-
----
-
-## Docker Deployment
-
-```bash
-# Build and start all services (API + Prometheus + Grafana)
 make docker-build
 make docker-up
-
-# Services:
-# - RAGX API:    http://localhost:8000
-# - Prometheus:  http://localhost:9090
-# - Grafana:     http://localhost:3000 (admin/ragx_admin)
 ```
 
 ---
 
-## Project Structure
-
-```
-ragx/
-├── config/          # Settings & logging
-├── ingestion/       # Phase 1: Document loaders & preprocessing
-│   └── loaders/     # PDF, DOCX, TXT, CSV, Markdown, Web
-├── embeddings/      # Phase 2: Chunking, embedding models, vector stores
-│   ├── chunking/    # Recursive & semantic splitting
-│   ├── models/      # OpenAI, BGE, Sentence Transformers
-│   └── vectorstore/ # FAISS & ChromaDB
-├── retrieval/       # Phase 3: Search, strategies, reranking
-│   ├── search/      # Similarity, BM25, Hybrid
-│   ├── strategies/  # Multi-query, parent-child, compression
-│   └── reranking/   # Cross-encoder, Cohere
-├── generation/      # Phase 4: LLM integration
-│   ├── llm/         # OpenAI, Anthropic, Gemini, Ollama
-│   └── prompts/     # Templates & formatting
-├── evaluation/      # Phase 5: RAGAS, DeepEval, custom metrics
-├── api/             # FastAPI backend
-│   └── routes/      # Ingest, query, admin, feedback
-└── monitoring/      # Prometheus metrics & query logging
-```
-
----
-
-## Configuration
-
-All settings are managed via environment variables (`.env` file):
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `RAGX_EMBEDDING_PROVIDER` | `sentence-transformer` | Embedding model provider |
-| `RAGX_VECTORSTORE_TYPE` | `chroma` | Vector store backend |
-| `RAGX_CHUNK_SIZE` | `500` | Chunk size in tokens |
-| `RAGX_RETRIEVAL_STRATEGY` | `hybrid` | Search strategy |
-| `RAGX_RERANKER` | `cross-encoder` | Reranking method |
-| `RAGX_LLM_PROVIDER` | `gemini` | LLM provider |
-| `RAGX_LLM_MODEL` | `gemini-1.5-flash` | LLM model name |
-
-See [.env.example](.env.example) for the complete list.
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Language | Python 3.10+ |
-| Framework | LangChain 1.3+ |
-| Document Parsing | PyPDF, python-docx, BeautifulSoup, Pandas |
-| Embeddings | OpenAI, BGE, Sentence Transformers |
-| Vector Stores | ChromaDB, FAISS |
-| Re-ranking | Cross-Encoders, Cohere |
-| LLMs | Gemini, GPT-4o, Claude, Llama |
-| API | FastAPI + Uvicorn |
-| Evaluation | RAGAS, DeepEval |
-| Monitoring | Prometheus + Grafana |
-| Deployment | Docker, Kubernetes |
-
----
-
-## License
-
-MIT License
+<p align="center">
+  <i>Designed and engineered with strict software architecture principles to push the boundaries of Applied AI.</i>
+</p>
