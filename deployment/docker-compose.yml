@@ -1,0 +1,72 @@
+# ==============================================================================
+# RAGX — Docker Compose Full Stack
+# Services: API, Prometheus, Grafana
+# ==============================================================================
+
+version: "3.9"
+
+services:
+  # ── RAGX API ─────────────────────────────────────────────────────────────
+  ragx-api:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    container_name: ragx-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+    volumes:
+      - ../data:/app/data
+    networks:
+      - ragx-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ── Prometheus ───────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ragx-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - ragx-network
+    restart: unless-stopped
+    depends_on:
+      ragx-api:
+        condition: service_healthy
+
+  # ── Grafana ──────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ragx-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=ragx_admin
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/ragx_dashboard.json
+    volumes:
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks:
+      - ragx-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+networks:
+  ragx-network:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
