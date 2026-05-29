@@ -11,7 +11,3 @@ services:
         value: "gemini"
       - key: GOOGLE_API_KEY
         sync: false
-    disk:
-      name: ragx-data
-      mountPath: /opt/render/project/src/data
-      sizeGB: 1
