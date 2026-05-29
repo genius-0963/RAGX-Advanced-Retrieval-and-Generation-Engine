@@ -1,0 +1,126 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Query Latency (p50 / p95 / p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(ragx_query_latency_seconds_bucket[5m]))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(ragx_query_latency_seconds_bucket[5m]))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(ragx_query_latency_seconds_bucket[5m]))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+    {
+      "title": "Request Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(ragx_requests_total[5m])",
+          "legendFormat": "{{endpoint}} - {{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      }
+    },
+    {
+      "title": "Error Rate",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(ragx_errors_total[5m]))",
+          "legendFormat": "Errors/sec"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "thresholds": { "steps": [{"value": 0, "color": "green"}, {"value": 0.1, "color": "yellow"}, {"value": 1, "color": "red"}] } }
+      }
+    },
+    {
+      "title": "Active Sessions",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
+      "targets": [
+        {
+          "expr": "ragx_active_sessions",
+          "legendFormat": "Sessions"
+        }
+      ]
+    },
+    {
+      "title": "Retrieval vs Generation Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(ragx_retrieval_latency_seconds_bucket[5m]))",
+          "legendFormat": "Retrieval p95"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(ragx_generation_latency_seconds_bucket[5m]))",
+          "legendFormat": "Generation p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+    {
+      "title": "Token Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "rate(ragx_tokens_total{type=\"prompt\"}[5m])",
+          "legendFormat": "Prompt Tokens/sec"
+        },
+        {
+          "expr": "rate(ragx_tokens_total{type=\"completion\"}[5m])",
+          "legendFormat": "Completion Tokens/sec"
+        }
+      ]
+    },
+    {
+      "title": "Documents in Store",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "ragx_documents_total",
+          "legendFormat": "Total Documents"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["ragx", "rag", "monitoring"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "RAGX — RAG Pipeline Dashboard",
+  "uid": "ragx-dashboard",
+  "version": 1
+}
