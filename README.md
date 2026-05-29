@@ -60,7 +60,7 @@
 
 ### Phase 2: Embedding Generation
 - **Intelligent chunking**: Recursive text splitting (500 tokens, 100 overlap) + semantic chunking
-- **Multiple embedding models**: OpenAI, BGE, Sentence Transformers
+- **Multiple embedding models**: Sentence Transformers (Local Default), OpenAI, BGE
 - **Vector stores**: ChromaDB (default) and FAISS
 - **Incremental updates**: Only process new/modified documents
 
@@ -71,7 +71,7 @@
 - **Evaluation metrics**: Precision@K, Recall@K, MRR, NDCG@K
 
 ### Phase 4: LLM Integration
-- **Multi-provider**: GPT-4o, Claude, Gemini, Llama (Ollama)
+- **Multi-provider**: Gemini (Default), GPT-4o, Claude, Llama (Ollama)
 - **Anti-hallucination**: Grounded prompts with citation enforcement
 - **Conversation memory**: Session-based sliding window
 - **Source attribution**: Automatic citation extraction and formatting
@@ -84,34 +84,45 @@
 
 ---
 
-## Quick Start
+## Quick Start (Recommended Installation via `uv`)
 
-### 1. Clone and Install
+Because RAGX relies on heavy ML dependencies (like PyTorch and LangChain), we strongly recommend using [uv](https://github.com/astral-sh/uv) to manage your Python environment. This completely avoids common C-library linking errors (like `expat` or `sqlite`) natively found on macOS.
 
+### 1. Install `uv`
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### 2. Clone and Setup Environment
 ```bash
 # Clone the repository
 cd "RAGX – Advanced Retrieval and Generation Engine"
 
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # macOS/Linux
+# Create a clean Python 3.12 environment and activate it
+uv venv --python 3.12 .venv
+source .venv/bin/activate
 
-# Install dependencies
-pip install -e ".[dev]"
+# Install all dependencies (in seconds!)
+uv pip install -e ".[dev]"
 ```
 
-### 2. Configure
-
+### 3. Configure API Keys
 ```bash
-# Copy environment template
+# Copy the environment template
 cp .env.example .env
 
-# Edit .env with your API keys
-# At minimum, set one LLM provider key (OpenAI, Anthropic, Google, or use Ollama)
+# Edit .env and insert your API keys
+# Out of the box, RAGX is configured to use Google Gemini and local SentenceTransformers.
+# Make sure to set: GOOGLE_API_KEY=your_key_here
 ```
 
-### 3. Run the API Server
+### 4. Run the End-to-End Test!
+We've included a script to quickly test all 4 phases (Ingestion -> Embedding -> Retrieval -> Generation) without starting a server:
+```bash
+python test_run.py
+```
 
+### 5. Run the API Server
 ```bash
 # Development mode (with auto-reload)
 make run
@@ -119,9 +130,6 @@ make run
 # Or directly:
 uvicorn ragx.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
-
-### 4. Open API Docs
-
 Navigate to **http://localhost:8000/docs** for the interactive Swagger UI.
 
 ---
@@ -153,30 +161,31 @@ Navigate to **http://localhost:8000/docs** for the interactive Swagger UI.
 ### Python SDK
 
 ```python
+from ragx.config.settings import get_settings
 from ragx.ingestion.pipeline import IngestionPipeline
 from ragx.embeddings.pipeline import EmbeddingPipeline
 from ragx.retrieval.engine import RetrievalEngine
 from ragx.generation.pipeline import GenerationPipeline
 
+settings = get_settings()
+
 # 1. Ingest documents
-ingestion = IngestionPipeline()
+ingestion = IngestionPipeline(settings=settings)
 docs = ingestion.ingest_file("data/raw/document.pdf")
-docs += ingestion.ingest_url("https://example.com/article")
 
 # 2. Embed and store
-embeddings = EmbeddingPipeline()
+embeddings = EmbeddingPipeline(settings=settings)
 embeddings.process(docs)
 
 # 3. Retrieve
-retrieval = RetrievalEngine(vectorstore=embeddings.get_vectorstore())
+retrieval = RetrievalEngine(settings=settings, vectorstore=embeddings.get_vectorstore())
 
 # 4. Generate answers
-generation = GenerationPipeline(retrieval_engine=retrieval)
+generation = GenerationPipeline(settings=settings, retrieval_engine=retrieval)
 result = generation.query("What are the key findings?")
 
 print(result["answer"])
 print(result["sources"])
-print(f"Confidence: {result['confidence_score']}")
 ```
 
 ### cURL
@@ -190,11 +199,6 @@ curl -X POST http://localhost:8000/api/v1/ingest/file \
 curl -X POST http://localhost:8000/api/v1/query \
   -H "Content-Type: application/json" \
   -d '{"query": "What are the key findings?", "top_k": 5}'
-
-# Chat (with memory)
-curl -X POST http://localhost:8000/api/v1/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Tell me more about that", "session_id": "my-session"}'
 ```
 
 ---
@@ -251,26 +255,10 @@ All settings are managed via environment variables (`.env` file):
 | `RAGX_CHUNK_SIZE` | `500` | Chunk size in tokens |
 | `RAGX_RETRIEVAL_STRATEGY` | `hybrid` | Search strategy |
 | `RAGX_RERANKER` | `cross-encoder` | Reranking method |
-| `RAGX_LLM_PROVIDER` | `openai` | LLM provider |
-| `RAGX_LLM_MODEL` | `gpt-4o` | LLM model name |
+| `RAGX_LLM_PROVIDER` | `gemini` | LLM provider |
+| `RAGX_LLM_MODEL` | `gemini-1.5-flash` | LLM model name |
 
 See [.env.example](.env.example) for the complete list.
-
----
-
-## Testing
-
-```bash
-# Run all tests
-make test
-
-# Phase-specific tests
-make test-phase1  # Ingestion
-make test-phase2  # Embeddings
-make test-phase3  # Retrieval
-make test-phase4  # Generation
-make test-phase5  # API
-```
 
 ---
 
@@ -284,7 +272,7 @@ make test-phase5  # API
 | Embeddings | OpenAI, BGE, Sentence Transformers |
 | Vector Stores | ChromaDB, FAISS |
 | Re-ranking | Cross-Encoders, Cohere |
-| LLMs | GPT-4o, Claude, Gemini, Llama |
+| LLMs | Gemini, GPT-4o, Claude, Llama |
 | API | FastAPI + Uvicorn |
 | Evaluation | RAGAS, DeepEval |
 | Monitoring | Prometheus + Grafana |
