@@ -4,6 +4,7 @@ emoji: 🚀
 colorFrom: blue
 colorTo: white
 sdk: docker
+app_file: ragx/api/main.py
 pinned: false
 ---
 
