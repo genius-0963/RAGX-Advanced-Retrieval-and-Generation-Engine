@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python">
-  <img src="https://img.shields.io/badge/architecture-Microservices-purple.svg" alt="Architecture">
-  <img src="https://img.shields.io/badge/langchain-1.3+-green.svg" alt="LangChain">
-  <img src="https://img.shields.io/badge/fastapi-latest-teal.svg" alt="FastAPI">
-  <img src="https://img.shields.io/badge/Docker-Ready-blue.svg" alt="Docker">
+  <a href="https://docs.python.org/3/" target="_blank"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python"></a>
+  <a href="https://microservices.io/" target="_blank"><img src="https://img.shields.io/badge/architecture-Microservices-purple.svg" alt="Architecture"></a>
+  <a href="https://python.langchain.com/" target="_blank"><img src="https://img.shields.io/badge/langchain-1.3+-green.svg" alt="LangChain"></a>
+  <a href="https://fastapi.tiangolo.com/" target="_blank"><img src="https://img.shields.io/badge/fastapi-latest-teal.svg" alt="FastAPI"></a>
+  <a href="https://docs.docker.com/" target="_blank"><img src="https://img.shields.io/badge/Docker-Ready-blue.svg" alt="Docker"></a>
 </p>
 
 ---
