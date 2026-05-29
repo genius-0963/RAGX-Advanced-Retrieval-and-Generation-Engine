@@ -1,0 +1,45 @@
+name: Python package
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # RAGX requires Python 3.10+, so we test on modern versions
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    
+    # 1. Install uv for lightning-fast environment setup
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+    # 2. Setup Python using uv
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+        
+    # 3. Install the project and all dependencies instantly with uv
+    - name: Install dependencies
+      run: |
+        uv venv
+        uv pip install flake8 pytest
+        uv pip install -e ".[dev]"
+    # 4. Lint the code
+    - name: Lint with flake8
+      run: |
+        # Make sure the virtual environment is used
+        source .venv/bin/activate
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    # 5. Run the test suite
+    - name: Test with pytest
+      run: |
+        source .venv/bin/activate
+        pytest
+
