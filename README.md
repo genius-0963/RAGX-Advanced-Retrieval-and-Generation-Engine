@@ -1,12 +1,3 @@
----
-title: RAGX Engine
-emoji: 🚀
-colorFrom: blue
-colorTo: white
-sdk: docker
-app_file: ragx/api/main.py
-pinned: false
----
 
 # RAGX — Advanced Retrieval and Generation Engine
 
