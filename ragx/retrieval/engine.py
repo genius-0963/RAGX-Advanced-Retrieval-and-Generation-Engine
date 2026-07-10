@@ -166,21 +166,18 @@ class RetrievalEngine:
             documents = documents[:top_k]
 
         # Step 3: Context compression (optional)
+        # Always use embeddings-based compression (0 token cost) instead of
+        # LLM-based compression which wastes tokens to save tokens.
         if use_compression and documents:
             try:
                 from ragx.retrieval.strategies.compression import ContextCompressor
 
-                method = "llm" if self.llm is not None else "embeddings"
                 compressor = ContextCompressor(
                     retriever=None,
-                    llm=self.llm if method == "llm" else None,
-                    embeddings=self.embeddings if method == "embeddings" else None,
-                    method=method,
+                    embeddings=self.embeddings,
+                    method="embeddings",
                 )
-                if method == "llm":
-                    documents = compressor._compress_with_llm(query, documents)
-                else:
-                    documents = compressor._compress_with_embeddings(query, documents)
+                documents = compressor._compress_with_embeddings(query, documents)
             except Exception as e:
                 logger.warning("compression_failed", error=str(e))
 
