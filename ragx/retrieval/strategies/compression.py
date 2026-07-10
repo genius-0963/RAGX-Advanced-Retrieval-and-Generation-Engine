@@ -42,7 +42,7 @@ class ContextCompressor:
         llm: Any = None,
         embeddings: Any = None,
         method: str = "llm",
-        similarity_threshold: float = 0.76,
+        similarity_threshold: float = 0.30,
     ) -> None:
         """
         Initialize context compressor.
@@ -91,7 +91,11 @@ class ContextCompressor:
     def _compress_with_embeddings(
         self, query: str, documents: list[Document]
     ) -> list[Document]:
-        """Use embedding similarity to filter low-relevance documents."""
+        """Use embedding similarity to filter low-relevance documents.
+
+        Always returns at least the top-scoring document so the LLM never
+        receives an empty context (fallback guard).
+        """
         if self.embeddings is None:
             logger.warning("no_embeddings_for_compression, returning uncompressed")
             return documents
@@ -101,22 +105,34 @@ class ContextCompressor:
             doc_texts = [doc.content for doc in documents]
             doc_embeddings = self.embeddings.embed_documents(doc_texts)
 
-            filtered: list[Document] = []
+            # Score every document
+            scored: list[tuple[float, Document]] = []
             for doc, doc_emb in zip(documents, doc_embeddings):
-                # Cosine similarity
                 dot_product = sum(a * b for a, b in zip(query_embedding, doc_emb))
                 norm_q = sum(a * a for a in query_embedding) ** 0.5
                 norm_d = sum(a * a for a in doc_emb) ** 0.5
                 similarity = dot_product / max(norm_q * norm_d, 1e-8)
+                doc.metadata["similarity_score"] = round(similarity, 4)
+                scored.append((similarity, doc))
 
-                if similarity >= self.similarity_threshold:
-                    doc.metadata["similarity_score"] = round(similarity, 4)
-                    filtered.append(doc)
+            # Keep docs above threshold
+            filtered = [doc for sim, doc in scored if sim >= self.similarity_threshold]
+
+            # Fallback: if nothing passes, return the best-scoring doc
+            if not filtered and scored:
+                best_sim, best_doc = max(scored, key=lambda x: x[0])
+                logger.warning(
+                    "embeddings_compression_fallback",
+                    best_score=round(best_sim, 4),
+                    threshold=self.similarity_threshold,
+                    msg="all docs below threshold — returning top-scoring doc",
+                )
+                filtered = [best_doc]
 
             logger.info(
                 "embeddings_compression",
                 original=len(documents),
-                filtered=len(filtered),
+                kept=len(filtered),
                 threshold=self.similarity_threshold,
             )
             return filtered
