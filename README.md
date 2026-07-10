@@ -26,7 +26,9 @@ pinned: false
 
 ## 📖 Project Overview
 
-**RAGX** is an end-to-end Retrieval-Augmented Generation (RAG) engine designed with senior software engineering and ML-Ops best practices. Built to solve the limitations of standard naive RAG pipelines, RAGX introduces **hybrid search**, **contextual compression**, **cross-encoder reranking**, and **multi-agent generation capabilities** into a unified, modular architecture.
+**RAGX** is an end-to-end Retrieval-Augmented Generation (RAG) engine designed with senior software engineering and ML-Ops best practices. Built to solve the limitations of standard naive RAG pipelines, RAGX introduces **hybrid search**, **contextual compression**, **cross-encoder reranking**, and **multi-agent generation capabilities** into a unified, modular architecture. 
+
+A major focus of RAGX is **Privacy-First, 100% Local Execution**. It is configured out-of-the-box to run entirely on your own hardware using **Ollama** and local embedding models, ensuring that zero proprietary data leaves your network.
 
 Whether deploying a semantic search engine over million-document corporate wikis, or building highly contextual conversational AI, RAGX provides the necessary data-ingestion scalability, retrieval precision, and generation safeguards to confidently push AI to production.
 
@@ -105,7 +107,9 @@ graph TD
 * **Citation Traceability:** Automatically extracts source documents, page numbers, and UUIDs to provide transparent, auditable answers.
 * **Multi-LLM Support:** Seamlessly integrated with Google Gemini, OpenAI GPT-4o, Anthropic Claude, and Local Ollama models.
 
-### 5. Production-Ready MLOps
+### 5. Production-Ready MLOps & Testing
+* **100% Offline Capability:** Out-of-the-box support for Ollama, ChromaDB, and HuggingFace Sentence Transformers for zero-data-leakage deployments.
+* **Comprehensive Test Suite:** Over 120+ offline unit tests verifying ingestion, embeddings, retrieval algorithms, and generation logic.
 * **Type Safety:** 100% strictly typed Python (mypy) with Pydantic-enforced configuration models.
 * **Monitoring:** Pre-instrumented with Prometheus and visualized via Dockerized Grafana dashboards.
 * **Continuous Evaluation:** Integrated `RAGAS` and `DeepEval` frameworks to continuously benchmark Faithfulness, Answer Relevance, and Context Precision.
@@ -149,17 +153,25 @@ source .venv/bin/activate
 uv pip install -e ".[dev]"
 ```
 
-### 2. Configuration
-Create a `.env` file from the example template. By default, RAGX is configured for **Google Gemini** (Generation) and **Sentence Transformers** (Local Embeddings).
-```bash
-cp .env.example .env
-# Edit .env and insert your API Key:
-# GOOGLE_API_KEY=your_key_here
-```
+### 2. Configuration & Local LLM (Ollama)
+RAGX is securely configured by default to run **100% locally** (no internet required for inference). It uses **Ollama** for generation and **Sentence Transformers** for local embeddings.
 
-### 3. Verify Integration (End-to-End Test)
-Run the built-in testing suite to verify all ML components (Ingestion → VectorDB → Retrieval → Generation) are communicating correctly:
 ```bash
+# 1. Start Ollama and download the default model (~2GB)
+ollama run llama3.2:3b
+
+# 2. Setup your environment file
+cp .env.example .env
+```
+*(If you prefer to use external APIs like Gemini, OpenAI, or Anthropic, simply update the `RAGX_LLM_PROVIDER` in `.env` and add your API key).*
+
+### 3. Verify Integration (End-to-End Test Suite)
+Run the built-in test suite to verify all ML components (Ingestion → VectorDB → Retrieval → Generation) are communicating correctly, as well as the unit tests:
+```bash
+# Run the 120+ offline unit tests
+pytest tests/ -v
+
+# Run the end-to-end integration test
 python test_run.py
 ```
 
