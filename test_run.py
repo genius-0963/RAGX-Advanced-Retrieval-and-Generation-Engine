@@ -27,14 +27,21 @@ from ragx.generation.pipeline import GenerationPipeline
 def main():
     print("🚀 Starting RAGX End-to-End Test Run...\n")
 
-    # Override settings for local testing
+    # ── Configuration: fully local, no API key required ──────────────────────
     os.environ["RAGX_EMBEDDING_PROVIDER"] = "sentence-transformer"
-    os.environ["RAGX_VECTORSTORE_TYPE"] = "chroma"
-    os.environ["RAGX_LLM_PROVIDER"] = "gemini"
-    os.environ["RAGX_LLM_MODEL"] = "gemini-1.5-flash"
-    
+    os.environ["RAGX_EMBEDDING_MODEL"]    = "all-MiniLM-L6-v2"
+    os.environ["RAGX_VECTORSTORE_TYPE"]   = "chroma"
+    os.environ["RAGX_LLM_PROVIDER"]       = "ollama"
+    os.environ["RAGX_RETRIEVAL_STRATEGY"] = "hybrid"
+    os.environ["RAGX_RERANKER"]           = "cross-encoder"
+    # OLLAMA_MODEL is read from settings (no RAGX_ prefix)
+    os.environ["OLLAMA_MODEL"]            = "llama3.2:3b"
+    os.environ["OLLAMA_BASE_URL"]         = "http://localhost:11434"
+
+    # Must clear lru_cache so env overrides take effect
+    get_settings.cache_clear()
     settings = get_settings()
-    
+
     print(f"🔧 Configuration:")
     print(f"  - Embeddings: {settings.embedding_provider.value} ({settings.embedding_model})")
     print(f"  - Vector Store: {settings.vectorstore_type.value}")
@@ -64,7 +71,13 @@ def main():
         # Phase 3: Retrieval
         print("🔍 Phase 3: Initializing Retrieval Engine...")
         vectorstore = embedding_pipeline.get_vectorstore()
-        retrieval_engine = RetrievalEngine(settings=settings, vectorstore=vectorstore)
+        # Pass the embedding model so context compression works too
+        embeddings = embedding_pipeline._get_embedding_model().get_langchain_embeddings()
+        retrieval_engine = RetrievalEngine(
+            settings=settings,
+            vectorstore=vectorstore,
+            embeddings=embeddings,
+        )
         print("  ✓ Retrieval Engine ready.\n")
 
         # Phase 4: Generation
@@ -89,8 +102,15 @@ def main():
                 print(f"  [{idx + 1}] {source['source']} (Excerpt: {source['excerpt'][:50]}...)")
             print("========================================\n")
         except Exception as e:
-            print(f"\n❌ Generation failed. (Note: Ensure Ollama is running locally if using 'ollama' provider.)")
-            print(f"Error: {e}")
+            if "connection" in str(e).lower() or "11434" in str(e):
+                print(f"\n❌ Generation failed — Ollama server not responding.")
+                print(f"   Make sure Ollama is running: ollama serve")
+                print(f"   And the model is downloaded: ollama pull llama3.2:3b")
+            elif "model" in str(e).lower() and "not found" in str(e).lower():
+                print(f"\n❌ Model not found locally.")
+                print(f"   Run: ollama pull llama3.2:3b")
+            else:
+                print(f"\n❌ Generation failed: {e}")
 
     finally:
         # Cleanup temporary file
