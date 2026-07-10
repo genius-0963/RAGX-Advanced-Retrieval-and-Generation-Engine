@@ -90,7 +90,7 @@ class GenerationPipeline:
         # Step 1: Retrieve context if not provided
         if context is None and self.retrieval_engine is not None:
             logger.info("auto_retrieving_context", query_preview=query[:80])
-            context = self.retrieval_engine.retrieve(query)
+            context = self.retrieval_engine.retrieve(query, use_compression=True)
         elif context is None:
             context = []
 
@@ -170,7 +170,7 @@ class GenerationPipeline:
         sid = session_id or "default"
 
         if context is None and self.retrieval_engine is not None:
-            context = self.retrieval_engine.retrieve(query)
+            context = self.retrieval_engine.retrieve(query, use_compression=True)
         elif context is None:
             context = []
 
